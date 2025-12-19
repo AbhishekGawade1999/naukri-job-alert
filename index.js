@@ -32,7 +32,7 @@ async function main() {
   logger.info(`${newJobs.length} new jobs found.`);
 
   if (newJobs.length > 0) {
-    const notificationPromises = newJobs.map(job => 
+    const notificationPromises = newJobs.map(job =>
       sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, `🚀 *New Job:* ${job.title}\n🔗 ${job.url}`)
     );
 
@@ -41,9 +41,10 @@ async function main() {
 
   } else {
     logger.info("No new jobs to notify.");
+    await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, "No new jobs found On Naukri 📉");
   }
 }
 
 main().catch(error => {
-    logger.error("An unexpected error occurred in main execution:", error);
+  logger.error("An unexpected error occurred in main execution:", error);
 });
