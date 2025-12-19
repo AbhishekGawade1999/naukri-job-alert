@@ -26,22 +26,72 @@ async function main() {
   const seen = await getSeenJobs();
   const seenUrls = new Set(seen.map(s => s.url));
 
-  const jobs = await fetchJobs(SEARCH_URL);
-  const newJobs = jobs.filter(j => !seenUrls.has(j.url));
+  // Parse SEARCH_URL: "url1|Place1, url2|Place2"
+  const searchConfigs = SEARCH_URL.split(',').map(entry => {
+    const [url, place] = entry.split('|');
+    return { url: url.trim(), place: place ? place.trim() : null };
+  });
 
-  logger.info(`${newJobs.length} new jobs found.`);
+  let allNewJobs = [];
+  let placeResults = [];
 
-  if (newJobs.length > 0) {
-    const notificationPromises = newJobs.map(job =>
-      sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, `🚀 *New Job:* ${job.title}\n🔗 ${job.url}`)
-    );
+  for (const config of searchConfigs) {
+    try {
+      const jobs = await fetchJobs(config.url);
+      const newJobs = jobs.filter(j => !seenUrls.has(j.url));
 
-    await Promise.all(notificationPromises);
-    await addSeenJobs(newJobs);
+      // Attach place to job object (optional, for debugging or future use)
+      newJobs.forEach(j => j.place = config.place);
 
-  } else {
-    logger.info("No new jobs to notify.");
-    await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, "No new jobs found On Naukri 📉");
+      allNewJobs = [...allNewJobs, ...newJobs];
+      // Add newly found jobs to seenUrls to avoid duplicates across different search URLs if any
+      newJobs.forEach(j => seenUrls.add(j.url));
+
+      placeResults.push({
+        place: config.place || "Naukri", // Default to "Naukri" if no place specified
+        jobs: newJobs
+      });
+
+    } catch (error) {
+      logger.error(`Error fetching jobs for URL: ${config.url}`, error);
+      placeResults.push({
+        place: config.place || "Unknown",
+        error: true
+      });
+    }
+  }
+
+  logger.info(`${allNewJobs.length} new jobs found across all searches.`);
+
+  // Construct consolidated message
+  let messageLines = [];
+
+  for (const result of placeResults) {
+    if (result.error) {
+      messageLines.push(`*${result.place}* - Error fetching jobs ⚠️`);
+      messageLines.push(""); // Add spacing
+      continue;
+    }
+
+    if (result.jobs.length > 0) {
+      messageLines.push(`*${result.place}* -`);
+      result.jobs.forEach((job, index) => {
+        messageLines.push(`${index + 1}) [${job.title}](${job.url})`);
+      });
+    } else {
+      messageLines.push(`*${result.place}* - No New Jobs Found On Naukri 📉`);
+    }
+    messageLines.push(""); // Add spacing between places
+  }
+
+  // Send single message if there are results
+  if (messageLines.length > 0) {
+    const fullMessage = messageLines.join("\n");
+    await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, fullMessage);
+  }
+
+  if (allNewJobs.length > 0) {
+    await addSeenJobs(allNewJobs);
   }
 }
 
