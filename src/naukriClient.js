@@ -13,10 +13,15 @@ async function fetchJobs(searchUrl) {
 
     await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
 
-    await page.goto(searchUrl, { waitUntil: 'domcontentloaded' }); // Wait for DOM to be loaded
+    await page.goto(searchUrl, { waitUntil: 'networkidle2', timeout: 60000 }); // Wait for network to be idle
 
     // Wait for the job listings to appear on the page
-    await page.waitForSelector('div.row1', { timeout: 10000 });
+    try {
+      await page.waitForSelector('div.row1', { timeout: 20000 });
+    } catch (e) {
+      logger.warn(`Timeout waiting for selector 'div.row1' on ${searchUrl}. Assuming no jobs found or page structure changed.`);
+      return [];
+    }
 
     // Add a short timeout to ensure all dynamic content has rendered
     await new Promise(resolve => setTimeout(resolve, 3000));
@@ -37,12 +42,12 @@ async function fetchJobs(searchUrl) {
       });
       return extractedJobs;
     });
-    
+
     logger.info(`Found ${jobs.length} jobs.`);
     return jobs;
   } catch (error) {
-      logger.error("Failed to fetch or parse jobs with Puppeteer:", error.message);
-      return [];
+    logger.error("Failed to fetch or parse jobs with Puppeteer:", error.message);
+    throw error; // Rethrow to allow calling function to handle it
   } finally {
     if (browser) {
       await browser.close();

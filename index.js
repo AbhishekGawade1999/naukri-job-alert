@@ -59,6 +59,13 @@ async function main() {
         error: true
       });
     }
+
+    // Add a random delay between 5 to 15 seconds between requests, but not after the last one
+    if (searchConfigs.indexOf(config) < searchConfigs.length - 1) {
+      const delay = Math.floor(Math.random() * (15000 - 5000 + 1) + 5000);
+      logger.info(`Waiting for ${delay / 1000} seconds before next request...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
 
   logger.info(`${allNewJobs.length} new jobs found across all searches.`);
@@ -68,7 +75,7 @@ async function main() {
 
   for (const result of placeResults) {
     if (result.error) {
-      messageLines.push(`*${result.place}* - Error fetching jobs ⚠️`);
+      messageLines.push(`*${result.place}* - ERROR NAUKRI ⚠️`);
       messageLines.push(""); // Add spacing
       continue;
     }
