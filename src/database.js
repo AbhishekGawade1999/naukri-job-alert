@@ -14,7 +14,7 @@ const pool = new Pool({
 });
 
 pool.on("error", (err, client) => {
-  logger.error("Unexpected error on idle client", err);
+  logger.error(`Unexpected error on idle client: ${err.message}`);
   process.exit(-1);
 });
 
@@ -32,7 +32,7 @@ async function init() {
     `);
     logger.info("Database table initialized successfully.");
   } catch (err) {
-    logger.error("Error initializing database table:", err);
+    logger.error(`Error initializing database table: ${err.message}`);
     throw err; // Propagate error to stop the application
   } finally {
     if (client) {
@@ -48,7 +48,7 @@ async function getSeenJobs() {
     const res = await client.query("SELECT url, title FROM seen_jobs");
     return res.rows;
   } catch (err) {
-    logger.error("Error fetching seen jobs from database:", err);
+    logger.error(`Error fetching seen jobs from database: ${err.message}`);
     return []; // Return empty array on error
   } finally {
     if (client) {
@@ -80,7 +80,7 @@ async function addSeenJobs(jobs) {
 
     logger.info(`Successfully processed ${jobs.length} jobs.`);
   } catch (err) {
-    logger.error("Error adding seen jobs to database:", err);
+    logger.error(`Error adding seen jobs to database: ${err.message}`);
     await client.query("ROLLBACK");
     throw err; // Re-throw the error to be caught by the main execution handler
   } finally {

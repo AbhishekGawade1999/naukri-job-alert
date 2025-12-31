@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer';
 import logger from './logger.js';
 
 async function fetchJobs(searchUrl) {
-  logger.info("Fetching jobs from:", searchUrl);
+  logger.info(`Fetching jobs from: ${searchUrl}`);
   let browser;
   try {
     browser = await puppeteer.launch({
@@ -46,7 +46,7 @@ async function fetchJobs(searchUrl) {
     logger.info(`Found ${jobs.length} jobs.`);
     return jobs;
   } catch (error) {
-    logger.error("Failed to fetch or parse jobs with Puppeteer:", error.message);
+    logger.error(`Failed to fetch or parse jobs with Puppeteer: ${error.message}`);
     throw error; // Rethrow to allow calling function to handle it
   } finally {
     if (browser) {

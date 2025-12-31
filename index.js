@@ -19,7 +19,7 @@ async function main() {
   try {
     await init();
   } catch (error) {
-    logger.error("Database initialization failed. Please check your database connection details.", error);
+    logger.error(`Database initialization failed. Please check your database connection details. ${error.message}`);
     process.exit(1); // Exit if the database cannot be initialized
   }
 
@@ -53,7 +53,7 @@ async function main() {
       });
 
     } catch (error) {
-      logger.error(`Error fetching jobs for URL: ${config.url}`, error);
+      logger.error(`Error fetching jobs for URL: ${config.url} - ${error.message}`);
       placeResults.push({
         place: config.place || "Unknown",
         error: true
@@ -103,5 +103,5 @@ async function main() {
 }
 
 main().catch(error => {
-  logger.error("An unexpected error occurred in main execution:", error);
+  logger.error(`An unexpected error occurred in main execution: ${error.message}`);
 });
