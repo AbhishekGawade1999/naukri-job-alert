@@ -73,6 +73,16 @@ async function main() {
   // Construct consolidated message
   let messageLines = [];
 
+  // Add header with timestamp and summary
+  const now = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+  if (allNewJobs.length > 0) {
+    messageLines.push(`🔔 *Naukri Job Alert* - ${allNewJobs.length} new job(s) found!`);
+  } else {
+    messageLines.push(`✅ *Naukri Job Alert* - No new jobs found`);
+  }
+  messageLines.push(`⏰ _${now}_`);
+  messageLines.push(""); // Add spacing
+
   for (const result of placeResults) {
     if (result.error) {
       messageLines.push(`*${result.place}* - ERROR NAUKRI ⚠️`);
@@ -86,16 +96,15 @@ async function main() {
         messageLines.push(`${index + 1}) [${job.title}](${job.url})`);
       });
     } else {
-      messageLines.push(`*${result.place}* - No New Jobs Found On Naukri 📉`);
+      messageLines.push(`*${result.place}* - No New Jobs Found 📉`);
     }
     messageLines.push(""); // Add spacing between places
   }
 
-  // Send single message if there are results
-  if (messageLines.length > 0) {
-    const fullMessage = messageLines.join("\n");
-    await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, fullMessage);
-  }
+  // Always send message
+  const fullMessage = messageLines.join("\n");
+  logger.info(`Sending Telegram message to chat ${TELEGRAM_CHAT_ID}:\n${fullMessage}`);
+  await sendTelegramMessage(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, fullMessage);
 
   if (allNewJobs.length > 0) {
     await addSeenJobs(allNewJobs);
